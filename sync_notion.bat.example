@@ -1,0 +1,11 @@
+@echo off
+echo Syncing Granola notes to Notion...
+
+:: Change the path below to the absolute path of where you cloned the repository
+cd /d "C:\path\to\your\granola-api-folder"
+
+:: Run the python script
+python sync_granola_to_notion.py
+
+echo.
+pause

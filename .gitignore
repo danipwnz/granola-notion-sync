@@ -1,0 +1,22 @@
+# Ambienti virtuali Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variabili d'ambiente e segreti
+.env
+
+# Dati utente ed esportazioni locali
+.synced_notes.json
+sample_doc.json
+
+# IDEs e OS
+.vscode/
+.DS_Store
+
+# Batch scripts
+*.bat
+!sync_notion.bat.example
