@@ -272,12 +272,24 @@ def main():
             continue
         
         # Navigate Granola's JSON to find the actual note content
+        # Priority 1: last_viewed_panel (AI summary, available on Pro)
         content_to_parse = None
         last_panel = doc.get("last_viewed_panel")
         if last_panel and isinstance(last_panel, dict):
             panel_content = last_panel.get("content")
             if panel_content and isinstance(panel_content, dict) and panel_content.get("type") == "doc":
                 content_to_parse = panel_content
+            else:
+                # Panel exists but content not ready yet (AI still generating) — skip without marking as synced
+                logger.warning(f"Skipping '{title}': AI summary not ready yet, retry later.")
+                continue
+
+        # Priority 2: top-level notes field (only if last_viewed_panel is entirely absent)
+        if not content_to_parse:
+            notes = doc.get("notes")
+            notes_plain = doc.get("notes_plain", "").strip()
+            if notes and isinstance(notes, dict) and notes.get("type") == "doc" and notes_plain:
+                content_to_parse = notes
 
         if not content_to_parse:
             logger.warning(f"Skipping '{title}': No parseable content found.")
