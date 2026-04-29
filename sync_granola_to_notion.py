@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import requests
+import time
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
@@ -29,6 +30,16 @@ def get_granola_token():
             # The token is buried inside a JSON string under workos_tokens
             workos_tokens = json.loads(data.get('workos_tokens', '{}'))
             token = workos_tokens.get('access_token')
+            
+            # Check for expiration (obtained_at is in ms, expires_in in s)
+            obtained_at = workos_tokens.get('obtained_at', 0)
+            expires_in = workos_tokens.get('expires_in', 0)
+            if token and obtained_at and expires_in:
+                expiry_time = (obtained_at / 1000) + expires_in
+                if time.time() > expiry_time:
+                    logger.warning("Granola access token appears to be EXPIRED.")
+                    logger.warning("Please open the Granola app to let it refresh, or logout and login again if the error persists.")
+
             if token:
                 return token
             logger.error("access_token not found inside workos_tokens")
@@ -56,6 +67,13 @@ def fetch_granola_docs(token, limit=10):
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
         return response.json().get('docs', [])
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            logger.error("ERROR: Granola session expired (401 Unauthorized).")
+            logger.error("TO FIX: Open the Granola app, logout and login again to refresh the token.")
+        else:
+            logger.error(f"Failed to fetch Granola documents (HTTP {e.response.status_code}): {e}")
+        return []
     except Exception as e:
         logger.error(f"Failed to fetch Granola documents: {e}")
         return []
